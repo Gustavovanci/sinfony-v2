@@ -3,21 +3,24 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useEffect } from 'react';
 import { useAuthStore } from './stores/authStore';
 
-// Páginas - TODOS SEM CHAVES (export default)
+// Páginas
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ModulePage from './pages/ModulePage';
-import ProgressPage from './pages/ProgressPage';      // SEM CHAVES
-import ProfilePage from './pages/ProfilePage';        // SEM CHAVES
-import CoordinatorPage from './pages/CoordinatorPage'; // SEM CHAVES
-import AdminPage from './pages/AdminPage';            // SEM CHAVES
+import ProgressPage from './pages/ProgressPage';
+import ProfilePage from './pages/ProfilePage';
+import CoordinatorPage from './pages/CoordinatorPage';
+import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Componentes
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+
+// A linha 'import ./App.css' foi removida para evitar conflitos de estilo.
+// A estilização principal agora é controlada exclusivamente pelo Tailwind CSS via 'src/index.css'.
 
 function App() {
   const { isLoading, isAuthenticated, setLoading } = useAuthStore();
@@ -26,11 +29,14 @@ function App() {
   useEffect(() => {
     const checkAuthState = async () => {
       try {
+        // Simula uma verificação de autenticação
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         const savedUser = localStorage.getItem('sinfony-user');
         if (savedUser) {
           console.log('Usuário encontrado no localStorage');
+          // Aqui você normalmente faria a validação do token/usuário
+          // e chamaria o setUser do authStore.
         }
         
       } catch (error) {
@@ -43,7 +49,7 @@ function App() {
     checkAuthState();
   }, [setLoading]);
 
-  // Loading inicial
+  // Tela de Loading inicial
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -57,72 +63,71 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Routes>
-          {/* Rotas Públicas */}
-          <Route 
-            path="/" 
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
-          />
-          <Route 
-            path="/login" 
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} 
-          />
+      {/* A div externa foi removida pois o Layout já controla a tela cheia */}
+      <Routes>
+        {/* Rotas Públicas */}
+        <Route 
+          path="/" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
+        />
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} 
+        />
 
-          {/* Rotas Protegidas */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Layout>
-                <DashboardPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+        {/* Rotas Protegidas com Layout */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Layout>
+              <DashboardPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
-          <Route path="/progress" element={
-            <ProtectedRoute>
-              <Layout>
-                <ProgressPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+        <Route path="/progress" element={
+          <ProtectedRoute>
+            <Layout>
+              <ProgressPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Layout>
-                <ProfilePage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Layout>
+              <ProfilePage />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
-          {/* Página de módulo sem layout */}
-          <Route path="/module/:moduleId" element={
-            <ProtectedRoute>
-              <ModulePage />
-            </ProtectedRoute>
-          } />
+        {/* Página de módulo sem o Layout principal */}
+        <Route path="/module/:moduleId" element={
+          <ProtectedRoute>
+            <ModulePage />
+          </ProtectedRoute>
+        } />
 
-          {/* Rotas para Coordenadores */}
-          <Route path="/coordinator" element={
-            <ProtectedRoute requiredRole="coordinator">
-              <Layout>
-                <CoordinatorPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+        {/* Rotas para Coordenadores */}
+        <Route path="/coordinator" element={
+          <ProtectedRoute requiredRole="coordinator">
+            <Layout>
+              <CoordinatorPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
-          {/* Rotas para Admins */}
-          <Route path="/admin" element={
-            <ProtectedRoute requiredRole="admin">
-              <Layout>
-                <AdminPage />
-              </Layout>
-            </ProtectedRoute>
-          } />
+        {/* Rotas para Admins */}
+        <Route path="/admin" element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout>
+              <AdminPage />
+            </Layout>
+          </ProtectedRoute>
+        } />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </div>
+        {/* Rota 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </Router>
   );
 }
