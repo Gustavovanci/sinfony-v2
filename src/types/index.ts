@@ -1,36 +1,32 @@
 // src/types/index.ts
 
-import { Timestamp } from 'firebase/firestore';
-
-// ===== USER & ORGANIZATION =====
-export interface Organization {
-  id: string;
-  name: string;
-  domain: string;
-  logoUrl?: string;
-  primaryColor: string;
-  createdAt: Timestamp;
-  isActive: boolean;
-}
-
+// User Types
 export interface User {
   id: string;
   email: string;
-  displayName: string;
-  organizationId: string;
-  role: 'employee' | 'coordinator' | 'admin';
-  profession?: string;
+  name: string;
+  role: 'user' | 'admin' | 'super_admin';
   department?: string;
-  points: number;
-  badges: string[];
-  status: 'active' | 'inactive';
-  profileCompleted: boolean;
-  createdAt: Timestamp;
-  lastLoginAt: Timestamp;
-  avatarUrl?: string;
+  position?: string;
+  avatar?: string;
+  createdAt: Date;
+  lastAccess: Date;
+  totalPoints: number;
+  completedModules: number;
+  badges: number;
+  level: number;
+  isActive: boolean;
 }
 
-// ===== MODULES & CONTENT =====
+// Module Types
+export type ModuleCategory = 
+  | 'seguranca' 
+  | 'tecnologia' 
+  | 'compliance' 
+  | 'lideranca' 
+  | 'soft-skills' 
+  | 'geral';
+
 export interface Module {
   id: string;
   title: string;
@@ -41,187 +37,612 @@ export interface Module {
   isActive: boolean;
   order: number;
   topics: Topic[];
-  createdAt: Timestamp;
   createdBy: string;
-  stats?: ModuleStats;
+  createdAt: Date;
+  updatedAt: Date;
+  tags?: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites?: string[];
+  learningObjectives?: string[];
 }
 
-export type ModuleCategory = 
-  | 'enfermagem' 
-  | 'medicina' 
-  | 'administracao' 
-  | 'seguranca' 
-  | 'geral';
+// Topic Types
+export type TopicType = 'text' | 'video' | 'image' | 'quiz' | 'document' | 'interactive';
 
 export interface Topic {
   id: string;
   title: string;
   type: TopicType;
   order: number;
-  content?: string; // HTML para tipo 'text'
-  videoUrl?: string; // YouTube embed para tipo 'video'
-  imageUrl?: string; // URL da imagem para tipo 'image'
-  quizId?: string; // ID do quiz para tipo 'quiz'
+  content: string;
+  description?: string;
+  estimatedMinutes?: number;
+  quiz?: Quiz;
+  resources?: Resource[];
+  isOptional?: boolean;
 }
 
-export type TopicType = 'video' | 'text' | 'image' | 'quiz';
-
-export interface ModuleStats {
-  totalCompletions: number;
-  averageRating: number;
-  totalViews: number;
-  averageTimeSpent: number; // em minutos
-}
-
-// ===== PROGRESS =====
-export interface ModuleProgress {
-  moduleId: string;
-  status: ProgressStatus;
-  completedTopics: string[];
-  quizScore?: number;
-  startedAt?: Timestamp;
-  completedAt?: Timestamp;
-  lastAccessedAt: Timestamp;
-  timeSpent: number; // em minutos
-}
-
-export type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
-
-// ===== QUIZ =====
-export interface Quiz {
+export interface Resource {
   id: string;
   title: string;
-  moduleId: string;
+  type: 'link' | 'file' | 'video';
+  url: string;
+  description?: string;
+}
+
+// Quiz Types
+export interface Quiz {
+  id?: string;
+  title: string;
+  description: string;
   questions: Question[];
-  createdAt: Timestamp;
-  timeLimit?: number; // em minutos
+  passingScore: number;
+  timeLimit?: number;
+  allowRetakes: boolean;
+  randomizeQuestions: boolean;
 }
 
 export interface Question {
   id: string;
-  text: string;
-  options: string[];
-  correctIndex: number;
+  type: 'multiple-choice' | 'true-false' | 'short-answer' | 'matching';
+  question: string;
+  options?: string[];
+  correctAnswer: string | string[];
   explanation?: string;
+  points: number;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
-export interface QuizAttempt {
-  quizId: string;
-  userId: string;
-  answers: number[]; // índices das respostas selecionadas
-  score: number; // 0-100
-  completedAt: Timestamp;
-  timeSpent: number; // em segundos
-}
-
-// ===== FEEDBACK =====
-export interface Feedback {
+export interface QuizResult {
   id: string;
   userId: string;
-  organizationId: string;
   moduleId: string;
-  nps: number; // 0-10
-  satisfaction: number; // 1-5
-  comment?: string;
-  createdAt: Timestamp;
+  topicId: string;
+  score: number;
+  passed: boolean;
+  answers: Record<string, any>;
+  timeSpent: number;
+  submittedAt: Date;
+  attempt: number;
 }
 
-// ===== NOTIFICATIONS =====
-export interface Notification {
+// Progress Tracking Types
+export interface UserProgress {
+  id: string;
+  userId: string;
+  moduleId: string;
+  topicsCompleted: TopicCompletion[];
+  completedAt: Date | null;
+  startedAt: Date;
+  lastAccessedAt: Date;
+  points: number;
+  averageScore: number;
+  timeSpentMinutes: number;
+  certificateEarned?: boolean;
+  notes?: string;
+}
+
+export interface TopicCompletion {
+  topicId: string;
+  completedAt: Date;
+  timeSpentSeconds: number;
+  score?: number;
+}
+
+export interface LearningStreak {
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate: Date | null;
+  streakType?: 'daily' | 'weekly';
+}
+
+export interface TimeSpent {
+  id: string;
+  userId: string;
+  date: Date;
+  minutes: number;
+  moduleId?: string;
+  topicId?: string;
+  activity?: 'learning' | 'quiz' | 'review' | 'discussion';
+}
+
+// Gamification Types
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  type: 'completion' | 'streak' | 'points' | 'speed' | 'perfectScore' | 'engagement' | 'security' | 'leadership';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  points: number;
+  criteria: Record<string, any>;
+  isActive: boolean;
+  iconUrl?: string;
+  color?: string;
+}
+
+export interface UserBadge {
+  id: string;
+  userId: string;
+  badgeId: string;
+  earnedAt: Date;
+  notificationSent?: boolean;
+}
+
+export interface Achievement {
   id: string;
   title: string;
-  message: string;
-  organizationId?: string; // se vazio, é global
-  targetRole?: UserRole; // se vazio, é para todos
-  createdAt: Timestamp;
-  createdBy: string;
-  isActive: boolean;
-  expiresAt?: Timestamp;
+  description: string;
+  points: number;
+  targetValue: number;
+  badgeId?: string;
+  type: 'completion' | 'points' | 'streak' | 'speed' | 'engagement';
+  isUnlocked: boolean;
+  isClaimed: boolean;
+  currentProgress: number;
+  unlockedAt: Date | null;
+  claimedAt: Date | null;
+  iconUrl?: string;
+  category?: string;
 }
 
-export interface UserNotificationStatus {
-  notificationId: string;
-  read: boolean;
-  readAt?: Timestamp;
-  dismissed: boolean;
+export interface Leaderboard {
+  userId: string;
+  name: string;
+  totalPoints: number;
+  level: number;
+  badges: number;
+  completedModules: number;
+  lastActivity: Date;
+  position?: number;
+  avatar?: string;
+  department?: string;
 }
 
-export type UserRole = 'employee' | 'coordinator' | 'admin';
-
-// ===== CERTIFICATES =====
-export interface Certificate {
+export interface PointsTransaction {
   id: string;
   userId: string;
-  moduleId: string;
-  organizationId: string;
-  issuedAt: Timestamp;
-  certificateUrl?: string; // se salvarmos o PDF
+  points: number;
+  description: string;
+  type: 'earned' | 'spent' | 'bonus' | 'penalty';
+  createdAt: Date;
+  moduleId?: string;
+  achievementId?: string;
+  relatedEntity?: string;
 }
 
-// ===== ANALYTICS =====
-export interface AnalyticsData {
+export interface GamificationStats {
+  totalPoints: number;
+  level: number;
+  experiencePoints: number;
+  totalBadges: number;
+  completedModules: number;
+  currentStreak: number;
+  longestStreak: number;
+  rank?: number;
+  nextLevelPoints?: number;
+}
+
+// Analytics Types
+export interface PlatformAnalytics {
   totalUsers: number;
   activeUsers: number;
   totalModules: number;
   completionRate: number;
-  averageEngagement: number;
-  topModules: Array<{
-    moduleId: string;
-    title: string;
-    completions: number;
-  }>;
-  userProgress: Array<{
-    userId: string;
-    displayName: string;
-    completedModules: number;
-    totalPoints: number;
-  }>;
+  averageSessionTime: number;
+  topCategories: CategoryStats[];
+  userGrowth: GrowthData[];
+  engagementMetrics: EngagementMetrics;
 }
 
-// ===== FORM TYPES =====
-export interface LoginForm {
-  email: string;
-  password: string;
+export interface CategoryStats {
+  category: ModuleCategory;
+  totalModules: number;
+  enrollments: number;
+  completions: number;
+  averageRating: number;
+  avgCompletionTime: number;
 }
 
-export interface SignupForm {
+export interface GrowthData {
+  date: Date;
+  newUsers: number;
+  activeUsers: number;
+  completions: number;
+}
+
+export interface EngagementMetrics {
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+  averageSessionsPerUser: number;
+  bounceRate: number;
+  retentionRate: number;
+}
+
+export interface SuperAdminMetrics {
+  totalUsers: number;
+  activeUsers: number;
+  totalModules: number;
+  completedModules: number;
+  averageCompletionRate: number;
+  totalHoursLearned: number;
+  badgesEarned: number;
+  avgTimePerModule: number;
+  userGrowth: number;
+  moduleCompletionTrend: number[];
+  categoryPerformance: CategoryPerformance[];
+  topPerformers: TopPerformer[];
+  recentActivity: Activity[];
+}
+
+export interface CategoryPerformance {
+  category: string;
+  totalModules: number;
+  completionRate: number;
+  avgRating: number;
+  enrollments: number;
+  averageTimeSpent: number;
+}
+
+export interface TopPerformer {
+  id: string;
+  name: string;
   email: string;
-  password: string;
-  displayName: string;
-  profession?: string;
+  completedModules: number;
+  totalPoints: number;
+  badges: number;
+  lastActivity: Date;
   department?: string;
+  level: number;
 }
 
-export interface ProfileForm {
-  displayName: string;
-  profession: string;
-  department: string;
+export interface Activity {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  moduleTitle?: string;
+  timestamp: Date;
+  points?: number;
+  description?: string;
+  type: 'completion' | 'quiz' | 'badge' | 'achievement' | 'login';
 }
 
-// ===== API RESPONSES =====
-export interface ApiResponse<T = unknown> {
+// Notification Types
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'achievement' | 'reminder';
+  isRead: boolean;
+  createdAt: Date;
+  readAt?: Date;
+  actionUrl?: string;
+  metadata?: Record<string, any>;
+}
+
+// Certificate Types
+export interface Certificate {
+  id: string;
+  userId: string;
+  moduleId: string;
+  certificateNumber: string;
+  issuedAt: Date;
+  validUntil?: Date;
+  templateId: string;
+  metadata: CertificateMetadata;
+}
+
+export interface CertificateMetadata {
+  userName: string;
+  moduleTitle: string;
+  completionDate: Date;
+  score: number;
+  timeSpent: number;
+  issuer: string;
+  signatories: string[];
+}
+
+// Discussion/Social Types
+export interface Discussion {
+  id: string;
+  moduleId: string;
+  topicId?: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  updatedAt: Date;
+  replies: Reply[];
+  likes: number;
+  views: number;
+  isLocked: boolean;
+  isPinned: boolean;
+  tags?: string[];
+}
+
+export interface Reply {
+  id: string;
+  discussionId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  updatedAt: Date;
+  parentReplyId?: string;
+  likes: number;
+  isModerated: boolean;
+}
+
+// Search Types
+export interface SearchResult {
+  id: string;
+  type: 'module' | 'topic' | 'discussion' | 'user';
+  title: string;
+  description: string;
+  url: string;
+  relevanceScore: number;
+  category?: string;
+  tags?: string[];
+  metadata?: Record<string, any>;
+}
+
+export interface SearchFilters {
+  categories?: ModuleCategory[];
+  difficulty?: string[];
+  duration?: {
+    min: number;
+    max: number;
+  };
+  tags?: string[];
+  type?: TopicType[];
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+// Reporting Types
+export interface Report {
+  id: string;
+  title: string;
+  type: 'user_progress' | 'module_analytics' | 'engagement' | 'completion' | 'gamification';
+  generatedBy: string;
+  generatedAt: Date;
+  parameters: ReportParameters;
+  data: any;
+  format: 'json' | 'csv' | 'pdf' | 'xlsx';
+  status: 'pending' | 'generating' | 'completed' | 'error';
+}
+
+export interface ReportParameters {
+  dateRange: {
+    start: Date;
+    end: Date;
+  };
+  users?: string[];
+  modules?: string[];
+  categories?: ModuleCategory[];
+  departments?: string[];
+  includeDetails?: boolean;
+}
+
+// Integration Types
+export interface Integration {
+  id: string;
+  name: string;
+  type: 'sso' | 'lms' | 'hr' | 'calendar' | 'notification' | 'analytics';
+  isEnabled: boolean;
+  configuration: Record<string, any>;
+  lastSyncAt?: Date;
+  status: 'active' | 'inactive' | 'error' | 'syncing';
+}
+
+// Settings Types
+export interface PlatformSettings {
+  id: string;
+  general: GeneralSettings;
+  authentication: AuthSettings;
+  gamification: GamificationSettings;
+  notifications: NotificationSettings;
+  security: SecuritySettings;
+  branding: BrandingSettings;
+}
+
+export interface GeneralSettings {
+  platformName: string;
+  description: string;
+  supportEmail: string;
+  timezone: string;
+  language: string;
+  allowSelfRegistration: boolean;
+  requireEmailVerification: boolean;
+  maintenanceMode: boolean;
+}
+
+export interface AuthSettings {
+  enableSSO: boolean;
+  ssoProvider?: string;
+  passwordPolicy: {
+    minLength: number;
+    requireUppercase: boolean;
+    requireNumbers: boolean;
+    requireSpecialChars: boolean;
+  };
+  sessionTimeout: number;
+  maxLoginAttempts: number;
+  lockoutDuration: number;
+}
+
+export interface GamificationSettings {
+  enabled: boolean;
+  pointsSystem: {
+    topicCompletion: number;
+    moduleCompletion: number;
+    quizPassing: number;
+    perfectScore: number;
+    dailyLogin: number;
+  };
+  leaderboardEnabled: boolean;
+  badgesEnabled: boolean;
+  achievementsEnabled: boolean;
+  levelSystem: {
+    enabled: boolean;
+    pointsPerLevel: number;
+  };
+}
+
+export interface NotificationSettings {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  inAppNotifications: boolean;
+  digestFrequency: 'daily' | 'weekly' | 'monthly' | 'never';
+  types: {
+    achievements: boolean;
+    reminders: boolean;
+    announcements: boolean;
+    social: boolean;
+  };
+}
+
+export interface SecuritySettings {
+  enforceHttps: boolean;
+  contentSecurityPolicy: string;
+  allowedDomains: string[];
+  ipWhitelist: string[];
+  auditLogging: boolean;
+  dataRetentionDays: number;
+}
+
+export interface BrandingSettings {
+  logo: string;
+  favicon: string;
+  primaryColor: string;
+  secondaryColor: string;
+  customCss?: string;
+  footerText?: string;
+}
+
+// API Response Types
+export interface ApiResponse<T = any> {
   success: boolean;
-  data?: T;
-  error?: string;
+  data: T;
   message?: string;
+  errors?: string[];
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    hasMore?: boolean;
+  };
 }
 
-// ===== UTILITY TYPES =====
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+    totalPages: number;
+  };
+}
 
+// Form Types
+export interface ModuleFormData {
+  title: string;
+  description: string;
+  category: ModuleCategory;
+  coverImageUrl: string;
+  estimatedMinutes: number;
+  isActive: boolean;
+  order: number;
+  topics: Topic[];
+  tags: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites: string[];
+  learningObjectives: string[];
+}
+
+export interface UserFormData {
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+  department?: string;
+  position?: string;
+  password?: string;
+}
+
+export interface QuizFormData {
+  title: string;
+  description: string;
+  questions: Question[];
+  passingScore: number;
+  timeLimit?: number;
+  allowRetakes: boolean;
+  randomizeQuestions: boolean;
+}
+
+// Error Types
 export interface AppError {
   code: string;
   message: string;
-  details?: unknown;
+  details?: any;
+  timestamp: Date;
+  userId?: string;
+  context?: Record<string, any>;
 }
 
-// ===== CLOUDINARY =====
-export interface CloudinaryUploadResponse {
-  secure_url: string;
-  public_id: string;
-  url: string;
-  format: string;
-  width: number;
-  height: number;
-  bytes: number;
+// Theme/UI Types
+export interface Theme {
+  name: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+    background: string;
+    surface: string;
+    text: {
+      primary: string;
+      secondary: string;
+      disabled: string;
+    };
+  };
+  typography: {
+    fontFamily: string;
+    fontSize: {
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+    };
+  };
+  spacing: {
+    xs: string;
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+  };
 }
+
+// Export all types for easy importing
+export type {
+  // Re-export main types for convenience
+  User,
+  Module,
+  Topic,
+  Quiz,
+  Question,
+  UserProgress,
+  Badge,
+  Achievement,
+  Notification,
+  Report
+};
